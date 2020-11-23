@@ -5,6 +5,8 @@
 const WIDTH = 30;
 const HEIGHT = 30;
 
+const MAX_SNAKE_GROWTH = 6;
+
 // translate game board size to pixels
 const SCALE = 20;
 
@@ -112,7 +114,7 @@ class Pellet {
 
 class Snake {
   constructor(color, keymap, start, dir) {
-    this.color = color, 
+    this.color = color;
     this.keymap = keymap;
     this.parts = [start]; // list of Points in snake body
     this.dir = dir;       // direction currently moving
@@ -226,6 +228,30 @@ class Snake {
   }
 }
 
+/** Subclass of Snake class where the snake grows by a different random amount */
+
+class RandomGrowthSnake extends Snake {
+  constructor(color, keymap, start, dir) {
+    super(color, keymap, start, dir);
+  }
+
+  eats(food) {
+    const randomGrowth = Math.floor(Math.random() * MAX_SNAKE_GROWTH);
+    const head = this.head();
+    const pellet = food.find(f => f.pt.x === head.x && f.pt.y === head.y);
+    console.log("eats pellet=", pellet);
+    if (pellet) this.growBy += randomGrowth;
+    return pellet;
+  }
+}
+
+/** Subclass of Snake class where the snake grows by a different random amount */
+
+class ImpatientSnake extends Snake {
+  constructor(color, keymap, start, dir) {
+    super(color, keymap, start, dir);
+  }
+}
 
 /** Overall game.
  *
@@ -257,9 +283,7 @@ class Game {
     while (this.food.length < this.numFood) {
       let newPellet = Pellet.newRandom();
       // console.log(newPellet);
-      if(!(this.isPelletOnSnake(newPellet))){
-        this.food.push(newPellet);
-      }
+      if ((this.isPelletOnSnake(newPellet)) === false) this.food.push(newPellet);
     }
   }
 
@@ -269,7 +293,7 @@ class Game {
    *  Returns: 
    */
 
-  isPelletOnSnake(pellet){
+  isPelletOnSnake(pellet) {
     // console.debug("isPelletOnSnake called"); 
     return this.snake.contains(pellet);
   }
@@ -327,7 +351,7 @@ class Game {
 
 /// Set up snakes, game, and start game
 
-const snake1 = new Snake(
+const snake1 = new RandomGrowthSnake(
   "yellow",
   {
     ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
@@ -338,7 +362,7 @@ const snake1 = new Snake(
 
 const snake2 = new Snake(
   {
-    w: "up", a: "left", s: "right", z: "down",
+    w: "up", a: "left", s: "right", d: "down",
   },
   new Point(10, 10),
   "right",
