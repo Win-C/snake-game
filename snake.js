@@ -46,7 +46,7 @@ class Point {
 
   static newRandom() {
     const randRange = (low, hi) =>
-        low + Math.floor((Math.random() * (hi - low)));
+      low + Math.floor((Math.random() * (hi - low)));
     return new Point(randRange(1, WIDTH), randRange(1, HEIGHT));
   }
 
@@ -61,11 +61,11 @@ class Point {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(
-        this.x * SCALE,
-        this.y * SCALE,
-        SCALE / 2,
-        0,
-        Math.PI * 2,
+      this.x * SCALE,
+      this.y * SCALE,
+      SCALE / 2,
+      0,
+      Math.PI * 2,
     );
     ctx.fill();
   }
@@ -143,6 +143,14 @@ class Snake {
     return (this.head().isOutOfBound());
   }
 
+  /** Did the snake crash into itself? t/f */
+  //TODO: Come back and see if you can use contains function above
+  checkCrashIntoSelf() {
+    const head = this.head();
+    const body = this.parts.slice(1);
+    return (body.some(me => me.x === head.x && me.y === head.y));
+  }
+
   /** Move snake one move in its current direction. */
 
   move() {
@@ -164,10 +172,30 @@ class Snake {
     else this.growBy--;
   }
 
-  /** If a valid key was used, change direction to that. */
+  /** If a valid key was used, change direction to that. 
+   *  Valid key excludes changing 180 degrees, can only change direction by
+   *  90 degrees. 
+   */
 
   handleKey(key) {
-    if (this.keymap[key] !== undefined) this.changeDir(this.keymap[key]);
+    if ((this.keymap[key] !== undefined) && (this._isNinetyDegree(key))) {
+      this.changeDir(this.keymap[key]);
+    }
+  }
+
+  /** Helper function to check desired direction change is 90 degrees
+   *  Params: 
+   *  Returns: true or false (Boolean)
+   */
+
+  _isNinetyDegree(key) {
+    console.debug("_isNinetyDegrees called");
+    if ((this.dir === "left") || (this.dir === "right")) {
+      return ((this.keymap[key] === "up") || (this.keymap[key] === "down"));
+    }
+    else if ((this.dir === "up") || (this.dir === "down")) {
+      return ((this.keymap[key] === "left") || (this.keymap[key] === "right"));
+    }
   }
 
   /** Change direction:
@@ -177,7 +205,7 @@ class Snake {
    */
 
   changeDir(dir) {
-   this.nextDir = dir;
+    this.nextDir = dir;
   }
 
   /** Handle potentially eating a food pellet:
@@ -233,6 +261,8 @@ class Game {
   /** Let snake try to handle the keystroke. */
 
   keyListener(evt) {
+    // console.log("keyListener called");
+    // console.log("key pressed", evt.key);
     this.snake.handleKey(evt.key);
   }
 
@@ -240,7 +270,7 @@ class Game {
 
   removeFood(pellet) {
     this.food = this.food.filter(
-        f => f.pt.x !== pellet.pt.x && f.pt.y !== pellet.pt.y);
+      f => f.pt.x !== pellet.pt.x && f.pt.y !== pellet.pt.y);
   }
 
   /** A "tick" of the game: called by interval timer.
@@ -254,7 +284,8 @@ class Game {
   tick() {
     console.log("tick");
 
-    const isDead = this.snake.checkCrashIntoWall();
+    //Checks if snake has crashed into something
+    const isDead = (this.snake.checkCrashIntoWall() || this.snake.checkCrashIntoSelf()) ? true : false;
 
     if (isDead) {
       window.clearInterval(this.timerId);
@@ -281,19 +312,19 @@ class Game {
 /// Set up snakes, game, and start game
 
 const snake1 = new Snake(
-    {
-      ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
-    },
-    new Point(20, 20),
-    "right",
+  {
+    ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
+  },
+  new Point(20, 20),
+  "right",
 );
 
 const snake2 = new Snake(
-    {
-      w: "up", a: "left", s: "right", z: "down",
-    },
-    new Point(10, 10),
-    "right",
+  {
+    w: "up", a: "left", s: "right", z: "down",
+  },
+  new Point(10, 10),
+  "right",
 );
 
 const game = new Game(snake1);
