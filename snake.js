@@ -129,8 +129,7 @@ class Snake {
   /** Does the snake body contain this Point? t/f */
 
   contains(pt) {
-    const snakeBody = this.parts.slice(1); // body excluding head
-    return snakeBody.some(me => me.x === pt.x && me.y === pt.y);
+    return this.parts.some(me => me.x === pt.x && me.y === pt.y);
   }
 
   /** Head (first Point) of the snake. */
@@ -149,7 +148,8 @@ class Snake {
 
   checkCrashIntoSelf() {
     const head = this.head();
-    return (this.contains(head));
+    const snakeBody = this.parts.slice(1);
+    return snakeBody.some(me => me.x === head.x && me.y === head.y);
   }
 
   /** Move snake one move in its current direction. */
@@ -190,7 +190,7 @@ class Snake {
    */
 
   _isNinetyDegree(key) {
-    console.debug("_isNinetyDegrees called");
+    // console.debug("_isNinetyDegrees called");
     if ((this.dir === "left") || (this.dir === "right")) {
       return ((this.keymap[key] === "up") || (this.keymap[key] === "down"));
     }
@@ -255,8 +255,23 @@ class Game {
 
   refillFood() {
     while (this.food.length < this.numFood) {
-      this.food.push(Pellet.newRandom());
+      let newPellet = Pellet.newRandom();
+      // console.log(newPellet);
+      if(!(this.isPelletOnSnake(newPellet))){
+        this.food.push(newPellet);
+      }
     }
+  }
+
+  /** Helper function to check if new Pellet is not on the same spot as the   
+   *  snake.
+   *  Params: pellet coordinates
+   *  Returns: 
+   */
+
+  isPelletOnSnake(pellet){
+    // console.debug("isPelletOnSnake called"); 
+    return this.snake.contains(pellet);
   }
 
   /** Let snake try to handle the keystroke. */
