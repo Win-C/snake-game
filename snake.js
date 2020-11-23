@@ -111,7 +111,8 @@ class Pellet {
  **/
 
 class Snake {
-  constructor(keymap, start, dir) {
+  constructor(color, keymap, start, dir) {
+    this.color = color, 
     this.keymap = keymap;
     this.parts = [start]; // list of Points in snake body
     this.dir = dir;       // direction currently moving
@@ -122,13 +123,14 @@ class Snake {
   /** Draw the body of the snake in its color. */
 
   draw() {
-    for (const p of this.parts) p.draw("orange");
+    for (const p of this.parts) p.draw(this.color);
   }
 
   /** Does the snake body contain this Point? t/f */
 
   contains(pt) {
-    return this.parts.some(me => me.x === pt.x && me.y === pt.y);
+    const snakeBody = this.parts.slice(1); // body excluding head
+    return snakeBody.some(me => me.x === pt.x && me.y === pt.y);
   }
 
   /** Head (first Point) of the snake. */
@@ -144,11 +146,10 @@ class Snake {
   }
 
   /** Did the snake crash into itself? t/f */
-  //TODO: Come back and see if you can use contains function above
+
   checkCrashIntoSelf() {
     const head = this.head();
-    const body = this.parts.slice(1);
-    return (body.some(me => me.x === head.x && me.y === head.y));
+    return (this.contains(head));
   }
 
   /** Move snake one move in its current direction. */
@@ -312,6 +313,7 @@ class Game {
 /// Set up snakes, game, and start game
 
 const snake1 = new Snake(
+  "yellow",
   {
     ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
   },
