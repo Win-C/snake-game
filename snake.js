@@ -181,8 +181,9 @@ class Snake {
    */
 
   handleKey(key) {
-    if ((this.keymap[key] !== undefined) && (this.checkIsNinetyDegree(key))) {
-      this.changeDir(this.keymap[key]);
+    const direction = this.keymap[key];
+    if ((direction !== undefined) && (this.checkIsNinetyDegree(direction))) {
+      this.changeDir(direction);
     }
   }
 
@@ -191,13 +192,13 @@ class Snake {
    *  Returns: true or false (Boolean)
    */
 
-  checkIsNinetyDegree(key) {
-    // console.debug("_isNinetyDegrees called");
+  checkIsNinetyDegree(nextDir) {
+    // console.debug("checkIsNinetyDegrees called");
     if ((this.dir === "left") || (this.dir === "right")) {
-      return ((this.keymap[key] === "up") || (this.keymap[key] === "down"));
+      return ((nextDir === "up") || (nextDir === "down"));
     }
     else if ((this.dir === "up") || (this.dir === "down")) {
-      return ((this.keymap[key] === "left") || (this.keymap[key] === "right"));
+      return ((nextDir === "left") || (nextDir === "right"));
     }
   }
 
@@ -218,7 +219,7 @@ class Snake {
    *
    * @param food - list of Pellet on board.
    */
-
+  //TODO: decomp parent so subclass can be streamlined
   eats(food) {
     const head = this.head();
     const pellet = food.find(f => f.pt.x === head.x && f.pt.y === head.y);
@@ -231,9 +232,6 @@ class Snake {
 /** Subclass of Snake class where the snake grows by a different random amount */
 
 class RandomGrowthSnake extends Snake {
-  constructor(color, keymap, start, dir) {
-    super(color, keymap, start, dir);
-  }
 
   /** Handle potentially eating a food pellet:
   *
@@ -266,17 +264,17 @@ class ImpatientSnake extends Snake {
   }
 
   /** Move snake one move in its current direction. */
-
+  //TODO: decomp parent class method to reduce redundant lines of code in subclass
   move() {
     const { x, y } = this.head();
 
     // Calculate where the new head will be, and add that point to front of body
     let pt;
-
-    if (this.checkPastMoves(this.nextDir)) {
-      this.nextDir= this.randomMove(this.nextDir);
-    } 
     
+    if (this.checkPastMovesAllSame(this.nextDir)) {
+      this.nextDir = this.randomMove(this.nextDir);
+    }
+
     this.dir = this.nextDir;
     this.pastMoves.push(this.dir);
     if (this.dir === "left") pt = new Point(x - 1, y);
@@ -292,18 +290,20 @@ class ImpatientSnake extends Snake {
     else this.growBy--;
   }
 
-  /** Helper function to check if the past 8 moves have been in the same 
-   *  direction. 
+  /** Helper function to check if the past selected number of moves have been in the same 
+   *  direction
    *  Params: current direction being moved
-   *  Returns: true or false (Boolean 
+   *  Returns: true - past selected number of moves are all the same
+   *           false - otherwise 
    */
-
-  checkPastMoves(nextDir) {
+  
+  checkPastMovesAllSame(nextDir) {
     console.debug("checkPastMoves called")
     const numSameMovesAllowed = 8;
     let sameMoves = 0;
     console.log("nextDir", nextDir);
 
+    //TODO: refactor using slice and every function
     for (let i = this.pastMoves.length - 1; i >= 0; i--) {
       if (this.pastMoves[i] === nextDir) sameMoves++;
       else break;
@@ -325,6 +325,9 @@ class ImpatientSnake extends Snake {
    */
 
   randomMove(nextDir) {
+    // TODO: Use object to clean up code.
+    // For example: let opposites = {up: "down", down: "up", right: "left", left: "right"};
+    
     console.debug("randomMove called");
     const randomMove = 1 + Math.floor((Math.random() * 2));
     let randomDir = null;
@@ -340,7 +343,7 @@ class ImpatientSnake extends Snake {
     if ((nextDir === "up") || (nextDir === "down") && (randomMove === 1)) {
       randomDir = "left";
     }
-    else if((nextDir === "up") || (nextDir === "down") && (randomMove === 2)) {
+    else if ((nextDir === "up") || (nextDir === "down") && (randomMove === 2)) {
       randomDir = "right";
     }
 
@@ -421,7 +424,8 @@ class Game {
     console.log("tick");
 
     //Checks if snake has crashed into something
-    const isDead = (this.snake.checkCrashIntoWall() || this.snake.checkCrashIntoSelf()) ? true : false;
+    const isDead = (this.snake.checkCrashIntoWall() ||
+                    this.snake.checkCrashIntoSelf());
 
     if (isDead) {
       window.clearInterval(this.timerId);
