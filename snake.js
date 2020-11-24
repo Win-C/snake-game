@@ -161,7 +161,7 @@ class Snake {
 
     // Calculate where the new head will be, and add that point to front of body
     let pt;
-    this.determineNextMove();
+    this.determineMove();
     if (this.dir === "left") pt = new Point(x - 1, y);
     if (this.dir === "right") pt = new Point(x + 1, y);
     if (this.dir === "up") pt = new Point(x, y - 1);
@@ -179,7 +179,7 @@ class Snake {
    *  the direction snake will start moving on next tick (this.nextDir)
    */
 
-  determineNextMove(){
+  determineMove(){
     this.dir = this.nextDir;
   }
 
@@ -266,7 +266,7 @@ class ImpatientSnake extends Snake {
   constructor(color, keymap, start, dir) {
     super(color, keymap, start, dir);
     this.pastMoves = [dir];
-    this.sameMoves = 8;
+    this.sameNumMoves = 8;
   }
   
   /** Function assigns snake direction currently moving (this.dir) to 
@@ -275,8 +275,8 @@ class ImpatientSnake extends Snake {
    *    is assigned to this.nextDir first
    */
   
-  determineNextMove(){
-    if ((this.pastMoves.length >= this.sameMoves) && (this.checkPastMovesAllSame())) {
+  determineMove(){
+    if ((this.pastMoves.length >= this.sameNumMoves) && (this.checkPastMovesAllSame())) {
       this.nextDir = this.randomMove(this.nextDir);
     }
     this.dir = this.nextDir;
@@ -292,9 +292,9 @@ class ImpatientSnake extends Snake {
   checkPastMovesAllSame() {
     console.debug("checkPastMoves called")
 
-    const start = this.pastMoves.length-(this.sameMoves);
+    const start = this.pastMoves.length-(this.sameNumMoves);
     const pastEightMoves = this.pastMoves.slice(start);
-    console.log("pastEightMoves = ", pastEightMoves);
+    // console.log("pastEightMoves = ", pastEightMoves);
 
     return pastEightMoves.every(dir => dir === pastEightMoves[0]);
   }
@@ -317,7 +317,7 @@ class ImpatientSnake extends Snake {
       randomDir = (randomMove === 1)? "left" : "right";
     }
 
-    console.log("nextDir = ", randomDir);
+    // console.log("nextDir = ", randomDir);
     return randomDir;
   }
 }
@@ -421,7 +421,7 @@ class Game {
 
 /// Set up snakes, game, and start game
 
-const snake1 = new ImpatientSnake(
+const snake1 = new Snake(
   "yellow",
   {
     ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
@@ -432,7 +432,7 @@ const snake1 = new ImpatientSnake(
 
 const snake2 = new Snake(
   {
-    w: "up", a: "left", s: "right", d: "down",
+    w: "up", a: "left", s: "right", z: "down",
   },
   new Point(10, 10),
   "right",
