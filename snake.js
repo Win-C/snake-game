@@ -161,7 +161,7 @@ class Snake {
 
     // Calculate where the new head will be, and add that point to front of body
     let pt;
-    this.dir = this.nextDir;
+    this.determineNextMove();
     if (this.dir === "left") pt = new Point(x - 1, y);
     if (this.dir === "right") pt = new Point(x + 1, y);
     if (this.dir === "up") pt = new Point(x, y - 1);
@@ -173,6 +173,14 @@ class Snake {
     // growth so we're closer to not-growing-any-more.
     if (this.growBy === 0) this.parts.pop();
     else this.growBy--;
+  }
+
+  /** Function assigns snake direction currently moving (this.dir) to 
+   *  the direction snake will start moving on next tick (this.nextDir)
+   */
+
+  determineNextMove(){
+    this.dir = this.nextDir;
   }
 
   /** If a valid key was used, change direction to that. 
@@ -224,8 +232,15 @@ class Snake {
     const head = this.head();
     const pellet = food.find(f => f.pt.x === head.x && f.pt.y === head.y);
     console.log("eats pellet=", pellet);
-    if (pellet) this.growBy += 2;
+    if (pellet) this.growSnakeBy();
     return pellet;
+  }
+
+  /** Function that grows this.growBy property value by 2 when called and returns 
+   *  the new value. 
+   */
+  growSnakeBy(){
+    return this.growBy += 2; 
   }
 }
 
@@ -233,22 +248,12 @@ class Snake {
 
 class RandomGrowthSnake extends Snake {
 
-  /** Handle potentially eating a food pellet:
-  *
-  * - if head is currently on pellet: start growing snake by a random growth 
-  *   amount, and return pellet.
-  * - otherwise, returns undefined.
-  *
-  * @param food - list of Pellet on board.
-  */
-
-  eats(food) {
+  /** Function that grows this.growBy property value by 2 when called and returns 
+   *  the new value. 
+   */
+  growSnakeBy(){
     const randomGrowth = Math.floor(Math.random() * MAX_SNAKE_GROWTH);
-    const head = this.head();
-    const pellet = food.find(f => f.pt.x === head.x && f.pt.y === head.y);
-    console.log("eats pellet=", pellet);
-    if (pellet) this.growBy += randomGrowth;
-    return pellet;
+    return this.growBy += randomGrowth; 
   }
 }
 
@@ -261,90 +266,55 @@ class ImpatientSnake extends Snake {
   constructor(color, keymap, start, dir) {
     super(color, keymap, start, dir);
     this.pastMoves = [dir];
+    this.sameMoves = 8;
   }
-
-  /** Move snake one move in its current direction. */
-  //TODO: decomp parent class method to reduce redundant lines of code in subclass
-  move() {
-    const { x, y } = this.head();
-
-    // Calculate where the new head will be, and add that point to front of body
-    let pt;
-    
-    if (this.checkPastMovesAllSame(this.nextDir)) {
+  
+  /** Function assigns snake direction currently moving (this.dir) to 
+   *  the direction snake will start moving on next tick (this.nextDir)
+   *  - If the past eight moves have been the same, then a random move 
+   *    is assigned to this.nextDir first
+   */
+  
+  determineNextMove(){
+    if ((this.pastMoves.length >= this.sameMoves) && (this.checkPastMovesAllSame())) {
       this.nextDir = this.randomMove(this.nextDir);
     }
-
     this.dir = this.nextDir;
     this.pastMoves.push(this.dir);
-    if (this.dir === "left") pt = new Point(x - 1, y);
-    if (this.dir === "right") pt = new Point(x + 1, y);
-    if (this.dir === "up") pt = new Point(x, y - 1);
-    if (this.dir === "down") pt = new Point(x, y + 1);
-    this.parts.unshift(pt);
-
-    // If we're not growing (didn't recently eat a pellet), remove the tail of
-    // the snake body, so it moves and doesn't grow. If we're growing, decrement
-    // growth so we're closer to not-growing-any-more.
-    if (this.growBy === 0) this.parts.pop();
-    else this.growBy--;
   }
 
-  /** Helper function to check if the past selected number of moves have been in the same 
+  /** Helper function to check if the past eight number of moves have been in the same 
    *  direction
-   *  Params: current direction being moved
-   *  Returns: true - past selected number of moves are all the same
+   *  Returns: true - past selected number of moves are ALL the same
    *           false - otherwise 
    */
   
-  checkPastMovesAllSame(nextDir) {
+  checkPastMovesAllSame() {
     console.debug("checkPastMoves called")
-    const numSameMovesAllowed = 8;
-    let sameMoves = 0;
-    console.log("nextDir", nextDir);
 
-    //TODO: refactor using slice and every function
-    for (let i = this.pastMoves.length - 1; i >= 0; i--) {
-      if (this.pastMoves[i] === nextDir) sameMoves++;
-      else break;
-    }
+    const start = this.pastMoves.length-(this.sameMoves);
+    const pastEightMoves = this.pastMoves.slice(start);
+    console.log("pastEightMoves = ", pastEightMoves);
 
-    console.log("sameMoves = ", sameMoves);
-    console.log("pastMoves array = ", this.pastMoves);
-
-    if (sameMoves === numSameMovesAllowed) {
-      this.pastMoves = [];
-      return true;
-    }
-
-    return false;
+    return pastEightMoves.every(dir => dir === pastEightMoves[0]);
   }
 
   /** Helper function to pick a random direction to move the snake.
-   *  Returns: random direction to move snake
+   *  Params: next direction to move
+   *  Returns: permissible (90 degree) random direction to move snake
    */
 
   randomMove(nextDir) {
-    // TODO: Use object to clean up code.
-    // For example: let opposites = {up: "down", down: "up", right: "left", left: "right"};
-    
     console.debug("randomMove called");
     const randomMove = 1 + Math.floor((Math.random() * 2));
     let randomDir = null;
 
-    // Select random direction 
-    if ((nextDir === "left") || (nextDir === "right") && (randomMove === 1)) {
-      randomDir = "up";
+    // Selects random 90 degree direction change using randomMove variable
+    if ((nextDir === "left") || (nextDir === "right")) {
+      randomDir = (randomMove === 1)? "up" : "down";
     }
-    else if ((nextDir === "left") || (nextDir === "right") && (randomMove === 2)) {
-      randomDir = "down";
-    }
-
-    if ((nextDir === "up") || (nextDir === "down") && (randomMove === 1)) {
-      randomDir = "left";
-    }
-    else if ((nextDir === "up") || (nextDir === "down") && (randomMove === 2)) {
-      randomDir = "right";
+    else if ((nextDir === "up") || (nextDir === "down")) { 
+      randomDir = (randomMove === 1)? "left" : "right";
     }
 
     console.log("nextDir = ", randomDir);
