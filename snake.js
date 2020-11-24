@@ -181,7 +181,7 @@ class Snake {
    */
 
   handleKey(key) {
-    if ((this.keymap[key] !== undefined) && (this._isNinetyDegree(key))) {
+    if ((this.keymap[key] !== undefined) && (this.checkIsNinetyDegree(key))) {
       this.changeDir(this.keymap[key]);
     }
   }
@@ -191,7 +191,7 @@ class Snake {
    *  Returns: true or false (Boolean)
    */
 
-  _isNinetyDegree(key) {
+  checkIsNinetyDegree(key) {
     // console.debug("_isNinetyDegrees called");
     if ((this.dir === "left") || (this.dir === "right")) {
       return ((this.keymap[key] === "up") || (this.keymap[key] === "down"));
@@ -235,6 +235,15 @@ class RandomGrowthSnake extends Snake {
     super(color, keymap, start, dir);
   }
 
+  /** Handle potentially eating a food pellet:
+  *
+  * - if head is currently on pellet: start growing snake by a random growth 
+  *   amount, and return pellet.
+  * - otherwise, returns undefined.
+  *
+  * @param food - list of Pellet on board.
+  */
+
   eats(food) {
     const randomGrowth = Math.floor(Math.random() * MAX_SNAKE_GROWTH);
     const head = this.head();
@@ -245,11 +254,98 @@ class RandomGrowthSnake extends Snake {
   }
 }
 
-/** Subclass of Snake class where the snake grows by a different random amount */
+/** Subclass of Snake class where the snake gets bored of moving in the same 
+ * direction, so if you haven’t changed direction for the last 8 moves, it 
+ * picks a new random direction
+ */
 
 class ImpatientSnake extends Snake {
   constructor(color, keymap, start, dir) {
     super(color, keymap, start, dir);
+    this.pastMoves = [dir];
+  }
+
+  /** Move snake one move in its current direction. */
+
+  move() {
+    const { x, y } = this.head();
+
+    // Calculate where the new head will be, and add that point to front of body
+    let pt;
+
+    if (this.checkPastMoves(this.nextDir)) {
+      this.nextDir= this.randomMove(this.nextDir);
+    } 
+    
+    this.dir = this.nextDir;
+    this.pastMoves.push(this.dir);
+    if (this.dir === "left") pt = new Point(x - 1, y);
+    if (this.dir === "right") pt = new Point(x + 1, y);
+    if (this.dir === "up") pt = new Point(x, y - 1);
+    if (this.dir === "down") pt = new Point(x, y + 1);
+    this.parts.unshift(pt);
+
+    // If we're not growing (didn't recently eat a pellet), remove the tail of
+    // the snake body, so it moves and doesn't grow. If we're growing, decrement
+    // growth so we're closer to not-growing-any-more.
+    if (this.growBy === 0) this.parts.pop();
+    else this.growBy--;
+  }
+
+  /** Helper function to check if the past 8 moves have been in the same 
+   *  direction. 
+   *  Params: current direction being moved
+   *  Returns: true or false (Boolean 
+   */
+
+  checkPastMoves(nextDir) {
+    console.debug("checkPastMoves called")
+    const numSameMovesAllowed = 8;
+    let sameMoves = 0;
+    console.log("nextDir", nextDir);
+
+    for (let i = this.pastMoves.length - 1; i >= 0; i--) {
+      if (this.pastMoves[i] === nextDir) sameMoves++;
+      else break;
+    }
+
+    console.log("sameMoves = ", sameMoves);
+    console.log("pastMoves array = ", this.pastMoves);
+
+    if (sameMoves === numSameMovesAllowed) {
+      this.pastMoves = [];
+      return true;
+    }
+
+    return false;
+  }
+
+  /** Helper function to pick a random direction to move the snake.
+   *  Returns: random direction to move snake
+   */
+
+  randomMove(nextDir) {
+    console.debug("randomMove called");
+    const randomMove = 1 + Math.floor((Math.random() * 2));
+    let randomDir = null;
+
+    // Select random direction 
+    if ((nextDir === "left") || (nextDir === "right") && (randomMove === 1)) {
+      randomDir = "up";
+    }
+    else if ((nextDir === "left") || (nextDir === "right") && (randomMove === 2)) {
+      randomDir = "down";
+    }
+
+    if ((nextDir === "up") || (nextDir === "down") && (randomMove === 1)) {
+      randomDir = "left";
+    }
+    else if((nextDir === "up") || (nextDir === "down") && (randomMove === 2)) {
+      randomDir = "right";
+    }
+
+    console.log("nextDir = ", randomDir);
+    return randomDir;
   }
 }
 
@@ -351,7 +447,7 @@ class Game {
 
 /// Set up snakes, game, and start game
 
-const snake1 = new RandomGrowthSnake(
+const snake1 = new ImpatientSnake(
   "yellow",
   {
     ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
